@@ -1,7 +1,0 @@
-{
-  "name": "Pixel Word Kingdom",
-  "description": "A gamified English learning adventure for middle school students with pixel-art aesthetics, map-based levels, and persistent progress tracking.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
-}
