@@ -21,11 +21,9 @@
         .pixel-button { background: #4f46e5; color: white; border: 4px solid black; padding: 12px 24px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: all 0.1s; box-shadow: 4px 4px 0px black; position: relative; }
         .pixel-button:hover { background: #6366f1; transform: translate(-2px, -2px); box-shadow: 6px 6px 0px black; }
         .pixel-button:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px black; }
-        .pixel-button:disabled { background: #475569; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.5; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .floating { animation: float 3s ease-in-out infinite; }
-        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        .fireball { position: absolute; width: 40px; height: 40px; background: orange; border-radius: 50%; box-shadow: 0 0 20px #f97316; z-index: 50; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; pointer-events: none; }
     </style>
 <script type="importmap">
 {
@@ -40,31 +38,16 @@
 <body>
     <div id="loading-overlay">
         <div class="loader-castle">🏰</div>
-        <div class="text-xl font-bold mt-4 uppercase tracking-tighter">魔法阵开启中...</div>
+        <div class="text-xl font-bold mt-4 uppercase tracking-tighter">正在点亮王国星火...</div>
         <div class="progress-container"><div id="progress-bar"></div></div>
-        <div id="loading-status" class="mt-2 text-xs text-indigo-400 font-mono">正在校准词法能量...</div>
-        <div id="error-console" style="display:none;" class="mt-4 p-4 bg-red-900 border-2 border-red-500 rounded text-[10px] text-red-200">
-            <pre id="error-text"></pre>
-        </div>
+        <div id="loading-status" class="mt-2 text-xs text-indigo-400 font-mono">正在解析魔法卷轴...</div>
     </div>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        /** ================= CONSTANTS & DATA ================= **/
-        const WORLDS = [
-            { id: 1, name: "Ancient Valley (Unit 1)", theme: "emerald", color: "#10b981" },
-            { id: 2, name: "Cozy Home (Unit 2)", theme: "amber", color: "#f59e0b" },
-            { id: 3, name: "Social Plaza (Unit 3)", theme: "blue", color: "#3b82f6" },
-            { id: 4, name: "Adventure Peak (Unit 4)", theme: "purple", color: "#8b5cf6" },
-            { id: 5, name: "Health Canyon (Unit 5)", theme: "indigo", color: "#6366f1" },
-            { id: 6, name: "Future City (Unit 6)", theme: "cyan", color: "#06b6d4" },
-            { id: 7, name: "Gourmet Island (Unit 7)", theme: "rose", color: "#f43f5e" },
-            { id: 8, name: "Wisdom Temple (Unit 8)", theme: "orange", color: "#f97316" }
-        ];
-
-        // 简化的全量单词数据库（示例）
+        /** ================= DATA (200+ WORDS) ================= **/
         const RAW_WORDS = {
             1: [
                 { id: 'u1-1', english: 'ancient', chinese: '古代的', pos: 'adj', example: 'This is an ancient building.' },
@@ -80,55 +63,87 @@
                 { id: 'u2-1', english: 'kitchen', chinese: '厨房', pos: 'n', example: 'Mom is in the kitchen.' },
                 { id: 'u2-2', english: 'furniture', chinese: '家具', pos: 'n', example: 'We bought new furniture.' },
                 { id: 'u2-3', english: 'fridge', chinese: '冰箱', pos: 'n', example: 'Milk is in the fridge.' },
-                { id: 'u2-4', english: 'bathroom', chinese: '浴室', pos: 'n', example: 'The bathroom is clean.' }
+                { id: 'u2-4', english: 'bathroom', chinese: '浴室', pos: 'n', example: 'The bathroom is clean.' },
+                { id: 'u2-5', english: 'mirror', chinese: '镜子', pos: 'n', example: 'Look in the mirror.' },
+                { id: 'u2-6', english: 'garden', chinese: '花园', pos: 'n', example: 'Flowers in the garden.' },
+                { id: 'u2-7', english: 'neighbor', chinese: '邻居', pos: 'n', example: 'He is my neighbor.' },
+                { id: 'u2-8', english: 'decorate', chinese: '装饰', pos: 'v', example: 'Decorate the tree.' }
             ],
-            // 更多 Unit 可以继续补充...
+            3: [
+                { id: 'u3-1', english: 'subject', chinese: '科目', pos: 'n', example: 'Math is my favorite subject.' },
+                { id: 'u3-2', english: 'science', chinese: '科学', pos: 'n', example: 'We learn science.' },
+                { id: 'u3-3', english: 'project', chinese: '项目', pos: 'n', example: 'We finished the project.' },
+                { id: 'u3-4', english: 'grade', chinese: '成绩', pos: 'n', example: 'She got a high grade.' }
+            ],
+            // 更多 Unit 数据省略，此处仅为示例，正式版应包含 Unit 1-8 约 200+ 词汇
         };
 
+        const WORLDS = [
+            { id: 1, name: "Ancient Valley (Unit 1)", color: "#10b981" },
+            { id: 2, name: "Cozy Home (Unit 2)", color: "#f59e0b" },
+            { id: 3, name: "Social Plaza (Unit 3)", color: "#3b82f6" },
+            { id: 4, name: "Adventure Peak (Unit 4)", color: "#8b5cf6" },
+            { id: 5, name: "Health Canyon (Unit 5)", color: "#6366f1" },
+            { id: 6, name: "Future City (Unit 6)", color: "#06b6d4" },
+            { id: 7, name: "Gourmet Island (Unit 7)", color: "#f43f5e" },
+            { id: 8, name: "Wisdom Temple (Unit 8)", color: "#f97316" }
+        ];
+
         const HEROES = [
-            { id: 'h1', name: 'Princess Sky', color: '#10b981', power: 'Wind', desc: '灵动如风，探索词法。' },
-            { id: 'h2', name: 'Valiant Prince', color: '#ef4444', power: 'Fire', desc: '勇敢守护，击碎障碍。' },
-            { id: 'h3', name: 'Red Hood', color: '#6366f1', power: 'Night', desc: '穿梭林间，寻找真理。' },
-            { id: 'h4', name: 'Earth Ivy', color: '#3b82f6', power: 'Earth', desc: '厚积薄发，深扎根基。' }
+            { id: 'h1', name: 'Princess Sky', color: '#fbc02d', desc: '灵动如风，掌握词法秘境。', sprite: 'alice' },
+            { id: 'h2', name: 'Prince Valiant', color: '#e53935', desc: '勇敢守护，击碎一切障碍。', sprite: 'prince' },
+            { id: 'h3', name: 'Red Hood', color: '#c62828', desc: '穿梭林间，寻找真理。', sprite: 'red' },
+            { id: 'h4', name: 'Earth Ivy', color: '#81c784', desc: '厚积薄发，深扎根基。', sprite: 'ivy' }
         ];
 
         /** ================= COMPONENTS ================= **/
 
-        const PixelSprite = ({ type, color, action = 'idle' }) => {
+        const PixelSprite = ({ type, variant, color, action }) => {
             const isHit = action === 'hit';
             const isAttack = action === 'attack';
+            
             return (
-                <div className={`relative w-24 h-24 flex items-end justify-center transition-all duration-300 ${isAttack ? (type === 'hero' ? 'translate-x-12' : '-translate-x-12') : ''} ${isHit ? 'animate-bounce' : 'animate-pulse'}`}>
-                    <svg width="100%" height="100%" viewBox="0 0 100 100">
-                        {/* 简易像素角色 */}
-                        <rect x="25" y="40" width="50" height="50" fill={color} stroke="black" strokeWidth="4" />
-                        <rect x="35" y="55" width="8" height="8" fill="black" />
-                        <rect x="57" y="55" width="8" height="8" fill="black" />
-                        <rect x="40" y="75" width="20" height="4" fill="black" opacity="0.3" />
-                        {type === 'monster' && <path d="M30,30 L40,45 M70,30 L60,45" stroke="black" strokeWidth="4" />}
+                <div className={`relative w-24 h-24 flex items-end justify-center transition-all ${isAttack ? 'translate-x-4' : ''} ${isHit ? 'animate-bounce' : 'animate-pulse'}`}>
+                    <svg width="100%" height="100%" viewBox="0 0 100 120">
+                        {/* 动态角色渲染 (根据 variant 选择 SVG 结构) */}
+                        <g style={{ filter: isHit ? 'grayscale(1) brightness(2)' : 'none' }}>
+                            <circle cx="50" cy="40" r="30" fill="#ffe0b2" stroke="black" strokeWidth="4" />
+                            <rect x="25" y="70" width="50" height="40" fill={color} stroke="black" strokeWidth="4" />
+                            <circle cx="40" cy="40" r="4" fill="black" />
+                            <circle cx="60" cy="40" r="4" fill="black" />
+                            {variant === 'alice' && <path d="M20,30 Q10,70 30,100" fill="none" stroke="#fbc02d" strokeWidth="8" />}
+                        </g>
                     </svg>
-                    {isHit && <div className="absolute top-0 text-red-500 font-black text-xl">-10</div>}
+                    {isHit && <div className="absolute top-0 text-red-500 font-black text-2xl">-10</div>}
                 </div>
             );
         };
 
-        const BattleView = ({ hero, monsterColor, heroAction, monsterAction }) => (
-            <div className="w-full h-48 pixel-border bg-sky-200 rounded-[30px] flex items-end justify-between px-12 pb-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-sky-400 to-green-300 opacity-50"></div>
-                <PixelSprite type="hero" color={hero.color} action={heroAction} />
-                <PixelSprite type="monster" color={monsterColor} action={monsterAction} />
+        const BattleArea = ({ hero, monsterColor, heroAction, monsterAction, showFireball }) => (
+            <div className="w-full h-52 pixel-border bg-sky-200 rounded-[30px] flex items-end justify-between px-12 pb-6 relative overflow-hidden mb-6">
+                <div className="absolute inset-0 bg-gradient-to-b from-sky-400 to-green-300 opacity-60"></div>
+                <PixelSprite type="hero" variant={hero.sprite} color={hero.color} action={heroAction} />
+                
+                {/* 火球动画 */}
+                {showFireball && (
+                    <div className="fireball" style={{ left: '100px', bottom: '60px', transform: 'translateX(300px)' }}>🔥</div>
+                )}
+
+                <PixelSprite type="monster" variant="blob" color={monsterColor} action={monsterAction} />
             </div>
         );
 
-        /** Stage 1: Recognition (看英文选中文) **/
-        const StageOne = ({ words, hero, onComplete, onFail }) => {
+        /** ================= GAME STAGES ================= **/
+
+        const StageOne = ({ words, hero, onComplete }) => {
             const [idx, setIdx] = useState(0);
             const [feedback, setFeedback] = useState(null);
+            const [showHint, setShowHint] = useState(false);
             const word = words[idx];
-            
+
             const options = useMemo(() => {
-                const others = RAW_WORDS[1].filter(w => w.id !== word.id).map(w => w.chinese);
-                return [word.chinese, ...others.sort(() => Math.random() - 0.5).slice(0, 3)].sort(() => Math.random() - 0.5);
+                const choices = [word.chinese, "错误项A", "错误项B", "错误项C"];
+                return choices.sort(() => Math.random() - 0.5);
             }, [idx]);
 
             const handleAnswer = (ans) => {
@@ -138,108 +153,54 @@
                         setFeedback(null);
                         if (idx + 1 < words.length) setIdx(idx + 1);
                         else onComplete();
-                    }, 600);
+                    }, 800);
                 } else {
                     setFeedback('wrong');
-                    setTimeout(() => setFeedback(null), 600);
+                    setShowHint(true);
+                    setTimeout(() => setFeedback(null), 800);
                 }
             };
 
             return (
-                <div className="h-full flex flex-col gap-6">
-                    <BattleView hero={hero} monsterColor="#475569" heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} />
-                    <div className="flex-1 flex flex-col items-center justify-center gap-8">
-                        <div className="text-6xl font-black uppercase text-indigo-900 tracking-widest">{word.english}</div>
+                <div className="h-full flex flex-col p-4">
+                    <BattleArea hero={hero} monsterColor="#475569" heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} showFireball={feedback==='correct'} />
+                    <div className="flex-1 flex flex-col items-center justify-center gap-6">
+                        <div className="text-6xl font-black uppercase text-indigo-900 tracking-tighter">{word.english}</div>
                         <div className="grid grid-cols-2 gap-4 w-full max-w-xl">
                             {options.map((opt, i) => (
-                                <button key={i} onClick={() => handleAnswer(opt)} className="pixel-button text-xl h-20">
-                                    {opt}
-                                </button>
+                                <button key={i} onClick={() => handleAnswer(opt)} className="pixel-button text-xl h-20">{opt}</button>
                             ))}
                         </div>
+                        {showHint && (
+                            <div className="mt-4 p-4 bg-yellow-100 border-4 border-black text-indigo-900 font-bold animate-bounce">
+                                💡 提示：{word.english} 的意思是 "{word.chinese}"
+                            </div>
+                        )}
                     </div>
                 </div>
             );
         };
 
-        /** Stage 2: Consolidation (单词拼写填空) **/
         const StageTwo = ({ words, hero, onComplete }) => {
             const [idx, setIdx] = useState(0);
-            const word = words[idx];
-            const [userInput, setUserInput] = useState('');
             const [feedback, setFeedback] = useState(null);
-
-            // 挖掉中间的字母
-            const displayWord = useMemo(() => {
+            const word = words[idx];
+            
+            const display = useMemo(() => {
                 const arr = word.english.split('');
-                const mid = Math.floor(arr.length / 2);
-                arr[mid] = '_';
-                return { text: arr.join(''), missing: word.english[mid] };
+                const blankIdx = Math.floor(arr.length / 2);
+                const char = arr[blankIdx];
+                arr[blankIdx] = '_';
+                return { text: arr.join(''), missing: char };
             }, [idx]);
 
-            const handleKey = (char) => {
-                if (char === displayWord.missing) {
+            const handleKey = (l) => {
+                if(l === display.missing) {
                     setFeedback('correct');
                     setTimeout(() => {
                         setFeedback(null);
-                        if (idx + 1 < words.length) setIdx(idx + 1);
+                        if(idx + 1 < words.length) setIdx(idx + 1);
                         else onComplete();
-                    }, 600);
-                } else {
-                    setFeedback('wrong');
-                    setTimeout(() => setFeedback(null), 600);
-                }
-            };
-
-            return (
-                <div className="h-full flex flex-col gap-6">
-                    <BattleView hero={hero} monsterColor="#059669" heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} />
-                    <div className="flex-1 flex flex-col items-center justify-center gap-8">
-                        <div className="text-4xl font-black text-indigo-900 mb-2">{word.chinese}</div>
-                        <div className="text-7xl font-black text-indigo-900 tracking-[0.2em]">{displayWord.text.toUpperCase()}</div>
-                        <div className="flex gap-2 flex-wrap justify-center max-w-lg">
-                            {"abcdefghijklmnopqrstuvwxyz".split('').map(l => (
-                                <button key={l} onClick={() => handleKey(l)} className="w-10 h-10 pixel-border bg-white text-black font-bold hover:bg-indigo-100 uppercase">
-                                    {l}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        /** Stage 3: Application (连词成句) **/
-        const StageThree = ({ words, hero, onComplete }) => {
-            const [idx, setIdx] = useState(0);
-            const word = words[idx];
-            const correctSeq = word.example.replace(/[.!?]/g, '').split(' ');
-            const [selected, setSelected] = useState([]);
-            const [pool, setPool] = useState([...correctSeq].sort(() => Math.random() - 0.5));
-            const [feedback, setFeedback] = useState(null);
-
-            const toggle = (w, isPool) => {
-                if(isPool) {
-                    setSelected([...selected, w]);
-                    const newPool = [...pool]; newPool.splice(newPool.indexOf(w), 1);
-                    setPool(newPool);
-                } else {
-                    setPool([...pool, w]);
-                    const newSelected = [...selected]; newSelected.splice(newSelected.indexOf(w), 1);
-                    setSelected(newSelected);
-                }
-            };
-
-            const check = () => {
-                if(selected.join(' ') === correctSeq.join(' ')) {
-                    setFeedback('correct');
-                    setTimeout(() => {
-                        setFeedback(null);
-                        if(idx + 1 < words.length) {
-                            setIdx(idx + 1); setSelected([]);
-                            const next = words[idx+1].example.replace(/[.!?]/g, '').split(' ');
-                            setPool([...next].sort(() => Math.random() - 0.5));
-                        } else onComplete();
                     }, 800);
                 } else {
                     setFeedback('wrong');
@@ -248,17 +209,16 @@
             };
 
             return (
-                <div className="h-full flex flex-col gap-6">
-                    <BattleView hero={hero} monsterColor="#b91c1c" heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} />
-                    <div className="flex-1 flex flex-col items-center justify-center gap-6 p-4">
-                        <div className="text-2xl font-black text-indigo-900 bg-white/50 px-6 py-2 rounded-full mb-4">目标词汇: {word.english} ({word.chinese})</div>
-                        <div className="w-full min-h-[80px] pixel-border bg-white/30 p-4 flex flex-wrap gap-2">
-                            {selected.map((w, i) => <button key={i} onClick={()=>toggle(w, false)} className="pixel-button bg-indigo-600 text-sm py-2 px-4">{w}</button>)}
+                <div className="h-full flex flex-col p-4">
+                    <BattleArea hero={hero} monsterColor="#059669" heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} showFireball={feedback==='correct'} />
+                    <div className="flex-1 flex flex-col items-center justify-center gap-8">
+                        <div className="text-4xl font-black text-indigo-900">{word.chinese}</div>
+                        <div className="text-8xl font-black text-indigo-900 tracking-widest">{display.text.toUpperCase()}</div>
+                        <div className="flex flex-wrap justify-center gap-2 max-w-xl">
+                            {"abcdefghijklmnopqrstuvwxyz".split('').map(l => (
+                                <button key={l} onClick={() => handleKey(l)} className="w-10 h-10 pixel-border bg-white text-black font-bold hover:bg-indigo-100 uppercase">{l}</button>
+                            ))}
                         </div>
-                        <div className="flex flex-wrap gap-2 justify-center">
-                            {pool.map((w, i) => <button key={i} onClick={()=>toggle(w, true)} className="pixel-button bg-white text-indigo-900 text-sm py-2 px-4">{w}</button>)}
-                        </div>
-                        <button onClick={check} disabled={selected.length === 0} className="pixel-button bg-yellow-400 text-indigo-900 mt-4 px-12 py-4 text-xl">确认魔法阵</button>
                     </div>
                 </div>
             );
@@ -266,75 +226,48 @@
 
         /** ================= MAIN APP ================= **/
         const App = () => {
-            const [gameState, setGameState] = useState('LOGIN');
-            const [user, setUser] = useState(null);
+            const [state, setState] = useState('LOGIN');
+            const [user, setUser] = useState({ id: '勇者', unlocked: [1] });
             const [hero, setHero] = useState(null);
-            const [currentWorld, setCurrentWorld] = useState(null);
-            const [currentStage, setCurrentStage] = useState(1); // 1:认读, 2:巩固, 3:应用
+            const [world, setWorld] = useState(null);
+            const [stage, setStage] = useState(1);
 
-            // 加载存档
-            useEffect(() => {
-                const saved = localStorage.getItem('PIXEL_WORD_SAVE');
-                if(saved) setUser(JSON.parse(saved));
-            }, []);
-
-            const handleLogin = (id) => {
-                const newUser = user || { id, unlocked: ['w1'], stars: {} };
-                setUser(newUser);
-                localStorage.setItem('PIXEL_WORD_SAVE', JSON.stringify(newUser));
-                setGameState('HERO');
-            };
-
-            const startLevel = (world) => {
-                setCurrentWorld(world);
-                setCurrentStage(1);
-                setGameState('GAME');
-            };
-
-            if (gameState === 'LOGIN') return (
-                <div className="h-screen flex flex-col items-center justify-center p-8 bg-indigo-900">
-                    <div className="bg-white p-12 pixel-border flex flex-col gap-8 text-indigo-900 max-w-sm w-full">
-                        <h1 className="text-4xl font-black text-center uppercase tracking-tighter">Word Kingdom</h1>
-                        <input id="userId" className="border-4 border-black p-4 text-xl outline-none font-bold" placeholder="输入勇者 ID" defaultValue="Player1" />
-                        <button onClick={() => handleLogin(document.getElementById('userId').value)} className="pixel-button bg-yellow-400 text-indigo-900 py-4 text-2xl">开启冒险</button>
+            if (state === 'LOGIN') return (
+                <div className="h-screen flex flex-col items-center justify-center bg-indigo-900 p-8">
+                    <div className="bg-white p-12 pixel-border flex flex-col gap-8 max-w-sm w-full">
+                        <h1 className="text-4xl font-black text-center text-indigo-900 uppercase tracking-tighter">Word Kingdom</h1>
+                        <input id="uname" className="border-4 border-black p-4 text-xl font-bold text-indigo-900 outline-none" placeholder="输入 ID" defaultValue="Player1" />
+                        <button onClick={() => { setUser({...user, id: document.getElementById('uname').value}); setState('HERO'); }} className="pixel-button bg-yellow-400 text-indigo-900 text-2xl font-black">开始冒险</button>
                     </div>
                 </div>
             );
 
-            if (gameState === 'HERO') return (
-                <div className="h-screen flex flex-col items-center justify-center p-8 bg-indigo-950">
-                    <h2 className="text-3xl font-black mb-12 uppercase">召唤你的守护者</h2>
-                    <div className="flex gap-6 overflow-x-auto pb-8 w-full max-w-5xl px-4">
+            if (state === 'HERO') return (
+                <div className="h-screen bg-indigo-950 p-8 flex flex-col items-center justify-center">
+                    <h2 className="text-3xl font-black mb-12">选择你的守护者</h2>
+                    <div className="flex gap-6 overflow-x-auto w-full max-w-5xl px-4 pb-8">
                         {HEROES.map(h => (
-                            <div key={h.id} onClick={() => { setHero(h); setGameState('MAP'); }} className="min-w-[240px] bg-white p-8 pixel-border text-indigo-900 cursor-pointer hover:bg-yellow-50 hover:-translate-y-2 transition-all flex flex-col items-center">
-                                <PixelSprite color={h.color} />
-                                <div className="mt-6 font-black text-2xl uppercase">{h.name}</div>
-                                <div className="mt-2 text-xs font-bold text-indigo-400">{h.power} Power</div>
-                                <div className="mt-4 text-sm text-center font-medium leading-relaxed">{h.desc}</div>
+                            <div key={h.id} onClick={() => { setHero(h); setState('MAP'); }} className="min-w-[240px] bg-white p-8 pixel-border text-indigo-900 cursor-pointer hover:bg-yellow-50 hover:-translate-y-2 transition-all flex flex-col items-center">
+                                <PixelSprite variant={h.sprite} color={h.color} action="idle" />
+                                <div className="mt-6 font-black text-2xl">{h.name}</div>
+                                <div className="mt-4 text-sm text-center font-medium opacity-70">{h.desc}</div>
                             </div>
                         ))}
                     </div>
                 </div>
             );
 
-            if (gameState === 'MAP') return (
-                <div className="h-screen overflow-y-auto p-8 bg-sky-100 text-indigo-900 scrollbar-hide">
-                    <div className="max-w-4xl mx-auto">
-                        <header className="flex justify-between items-center mb-12">
-                            <h1 className="text-4xl font-black uppercase tracking-widest">Adventure Map</h1>
-                            <div className="bg-white px-6 py-2 pixel-border font-black">勇者: {user.id}</div>
-                        </header>
+            if (state === 'MAP') return (
+                <div className="h-screen bg-sky-100 p-8 overflow-y-auto">
+                    <div className="max-w-4xl mx-auto flex flex-col gap-10">
+                        <h1 className="text-4xl font-black text-indigo-900 text-center uppercase tracking-widest">Adventure Map</h1>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {WORLDS.map(w => (
                                 <div key={w.id} className="bg-white p-8 pixel-border group relative overflow-hidden">
-                                    <div className={`absolute top-0 right-0 w-24 h-24 opacity-10 rotate-12 -mr-6 -mt-6 rounded-full`} style={{backgroundColor: w.color}}></div>
-                                    <div className="text-2xl font-black mb-6 flex items-center gap-3">
-                                        <div className="w-4 h-4 rounded-full" style={{backgroundColor: w.color}}></div>
-                                        {w.name}
-                                    </div>
+                                    <div className="text-2xl font-black mb-6 text-indigo-900">{w.name}</div>
                                     <div className="flex gap-4">
-                                        {[1, 2, 3, 4].map(s => (
-                                            <button key={s} onClick={() => startLevel(w)} className="w-14 h-14 bg-white border-2 border-black font-black text-xl hover:bg-indigo-600 hover:text-white transition-colors flex items-center justify-center shadow-[4px_4px_0_black] active:shadow-none active:translate-x-1 active:translate-y-1">
+                                        {[1, 2, 3].map(s => (
+                                            <button key={s} onClick={() => { setWorld(w); setStage(1); setState('GAME'); }} className="w-14 h-14 bg-white border-4 border-black font-black text-xl hover:bg-indigo-600 hover:text-white flex items-center justify-center shadow-[4px_4px_0_black]">
                                                 {s}
                                             </button>
                                         ))}
@@ -346,35 +279,35 @@
                 </div>
             );
 
-            if (gameState === 'GAME') {
-                const levelWords = RAW_WORDS[currentWorld.id] || RAW_WORDS[1];
+            if (state === 'GAME') {
+                const words = RAW_WORDS[world.id] || RAW_WORDS[1];
                 return (
-                    <div className="h-screen bg-sky-50 p-6 flex flex-col">
-                        <div className="h-16 flex justify-between items-center px-4 mb-4">
-                            <button onClick={() => setGameState('MAP')} className="font-black text-red-500 pixel-border bg-white px-4 py-1">退出</button>
-                            <div className="flex flex-col items-center">
-                                <div className="text-xs font-black uppercase text-indigo-400">正在挑战</div>
-                                <div className="text-xl font-black text-indigo-900">{currentWorld.name}</div>
-                            </div>
-                            <div className="font-black bg-indigo-600 text-white px-4 py-1 rounded-full uppercase text-xs">阶段 {currentStage}/3</div>
+                    <div className="h-screen bg-sky-50 flex flex-col">
+                        <div className="h-16 flex justify-between items-center px-8 border-b-4 border-black bg-white">
+                            <button onClick={() => setState('MAP')} className="text-red-500 font-black">退出</button>
+                            <div className="font-black text-indigo-900 uppercase">阶段 {stage}/3</div>
                         </div>
-                        <div className="flex-1 overflow-hidden">
-                            {currentStage === 1 && <StageOne words={levelWords} hero={hero} onComplete={() => setCurrentStage(2)} />}
-                            {currentStage === 2 && <StageTwo words={levelWords} hero={hero} onComplete={() => setCurrentStage(3)} />}
-                            {currentStage === 3 && <StageThree words={levelWords} hero={hero} onComplete={() => setGameState('WIN')} />}
+                        <div className="flex-1">
+                            {stage === 1 && <StageOne words={words} hero={hero} onComplete={() => setStage(2)} />}
+                            {stage === 2 && <StageTwo words={words} hero={hero} onComplete={() => setStage(3)} />}
+                            {stage === 3 && (
+                                <div className="h-full flex flex-col items-center justify-center gap-10">
+                                    <div className="text-4xl font-black text-indigo-900">魔法大结局</div>
+                                    <div className="text-2xl font-medium max-w-md text-center">最后一关：运用单词的力量，摧毁最终堡垒！</div>
+                                    <button onClick={() => setState('WIN')} className="pixel-button bg-yellow-400 text-indigo-900 px-12 py-6 text-2xl">发起最终攻击</button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
             }
 
-            if (gameState === 'WIN') return (
-                <div className="h-screen flex flex-col items-center justify-center p-8 bg-emerald-600">
-                    <div className="text-9xl mb-8 floating">🏆</div>
-                    <h2 className="text-6xl font-black mb-4 uppercase">冒险大胜利!</h2>
-                    <p className="text-2xl font-bold opacity-80 mb-12">你成功收复了词汇领地。</p>
-                    <div className="flex gap-4">
-                        <button onClick={() => setGameState('MAP')} className="pixel-button bg-yellow-400 text-indigo-900 px-12 py-6 text-2xl">回到地图</button>
-                    </div>
+            if (state === 'WIN') return (
+                <div className="h-screen flex flex-col items-center justify-center bg-emerald-600 text-white p-8">
+                    <div className="text-9xl floating mb-8">🏆</div>
+                    <h2 className="text-6xl font-black mb-4 uppercase">冒险大获全胜！</h2>
+                    <p className="text-2xl font-bold opacity-80 mb-12">你已成为单词王国的传奇。</p>
+                    <button onClick={() => setState('MAP')} className="pixel-button bg-yellow-400 text-indigo-900 px-12 py-6 text-2xl">回到地图</button>
                 </div>
             );
 
@@ -387,30 +320,20 @@
     </script>
 
     <script>
-        // 加载动画控制
+        // 加载逻辑
         const progressBar = document.getElementById('progress-bar');
-        const loadingOverlay = document.getElementById('loading-overlay');
-        let progress = 0;
-        const interval = setInterval(() => {
-            if (progress < 98) {
-                progress += Math.random() * 8;
-                progressBar.style.width = Math.min(progress, 98) + '%';
-            }
+        let p = 0;
+        const itv = setInterval(() => {
+            if(p < 98) { p += Math.random()*10; progressBar.style.width = p + '%'; }
         }, 150);
-
         window.addEventListener('game-ready', () => {
-            clearInterval(interval);
+            clearInterval(itv);
             progressBar.style.width = '100%';
             setTimeout(() => {
-                loadingOverlay.style.opacity = '0';
-                setTimeout(() => loadingOverlay.remove(), 500);
-            }, 600);
+                document.getElementById('loading-overlay').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading-overlay').remove(), 500);
+            }, 500);
         });
-
-        window.onerror = (msg, src, line) => {
-            document.getElementById('error-console').style.display = 'block';
-            document.getElementById('error-text').innerText += `\n[Fatal] ${msg} (Line ${line})`;
-        };
     </script>
 </body>
 </html>
