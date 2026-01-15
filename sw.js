@@ -1,10 +1,10 @@
 
 const CACHE_NAME = 'word-kingdom-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/index.tsx',
-  '/manifest.json',
+  './',
+  './index.html',
+  './index.tsx',
+  './manifest.json',
   'https://cdn.tailwindcss.com',
   'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'
 ];

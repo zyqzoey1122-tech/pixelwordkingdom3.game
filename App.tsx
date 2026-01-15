@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Word, GameStageType, Level, Hero, LeaderboardEntry } from './types';
-import { storageService } from './services/storageService';
-import { RAW_WORDS, WORLDS } from './constants';
-import { MapView } from './components/MapView';
-import { StageOne } from './components/StageOne';
-import { StageTwo } from './components/StageTwo';
-import { StageThree } from './components/StageThree';
-import { PixelCard } from './components/PixelCard';
-import { PixelSprite } from './components/PixelSprite';
+import { User, Word, GameStageType, Level, Hero, LeaderboardEntry } from './types.ts';
+import { storageService } from './services/storageService.ts';
+import { RAW_WORDS, WORLDS } from './constants.tsx';
+import { MapView } from './components/MapView.tsx';
+import { StageOne } from './components/StageOne.tsx';
+import { StageTwo } from './components/StageTwo.tsx';
+import { StageThree } from './components/StageThree.tsx';
+import { PixelCard } from './components/PixelCard.tsx';
+import { PixelSprite } from './components/PixelSprite.tsx';
 
 const HEROES: Hero[] = [
   { id: 'h1', name: 'Princess Sky', type: 'Wind', color: 'bg-emerald-500', gender: 'F', description: 'Curious and light on her feet.' },
