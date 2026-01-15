@@ -4,26 +4,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Word Kingdom - 单词王国</title>
+    <title>Pixel Word Kingdom - Master Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;500;700&display=swap');
-        body { font-family: 'Quicksand', sans-serif; background-color: #1e1b4b; margin: 0; overflow: hidden; user-select: none; color: white; }
-        #loading-overlay { position: fixed; inset: 0; background: #1e1b4b; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s; }
-        .loader-castle { font-size: 80px; animation: bounce 1s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        .progress-container { width: 280px; height: 12px; background: #312e81; border: 2px solid #4f46e5; border-radius: 20px; margin-top: 20px; overflow: hidden; position: relative; }
-        #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5, #818cf8); transition: width 0.3s; }
-        .pixel-border { border: 4px solid black; box-shadow: 6px 6px 0px rgba(0,0,0,0.3); }
-        .pixel-button { background: #4f46e5; color: white; border: 4px solid black; padding: 12px 24px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: all 0.1s; box-shadow: 4px 4px 0px black; position: relative; }
+        body { font-family: 'Quicksand', sans-serif; background-color: #0f172a; margin: 0; overflow: hidden; user-select: none; color: white; }
+        
+        /* Pixel Styling */
+        .pixel-border { border: 4px solid black; box-shadow: 6px 6px 0px rgba(0,0,0,0.4); }
+        .pixel-button { 
+            background: #4f46e5; color: white; border: 4px solid black; 
+            padding: 12px 24px; font-weight: 900; text-transform: uppercase; 
+            cursor: pointer; transition: all 0.1s; box-shadow: 4px 4px 0px black; 
+            position: relative; 
+        }
         .pixel-button:hover { background: #6366f1; transform: translate(-2px, -2px); box-shadow: 6px 6px 0px black; }
         .pixel-button:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px black; }
+        .pixel-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Combat Animations */
+        @keyframes fireball-fly {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            90% { transform: translate(400px, -20px) scale(1.5); opacity: 1; }
+            100% { transform: translate(450px, -25px) scale(0); opacity: 0; }
+        }
+        .fireball-active { animation: fireball-fly 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .shake-effect { animation: shake 0.2s ease-in-out 3; }
+        
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .floating { animation: float 3s ease-in-out infinite; }
-        .fireball { position: absolute; width: 40px; height: 40px; background: orange; border-radius: 50%; box-shadow: 0 0 20px #f97316; z-index: 50; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; pointer-events: none; }
+
+        /* Loading Overlay */
+        #loading-overlay { position: fixed; inset: 0; background: #1e1b4b; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s; }
+        .progress-container { width: 300px; height: 12px; background: #312e81; border: 3px solid #4f46e5; border-radius: 20px; overflow: hidden; }
+        #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5, #818cf8); transition: width 0.3s; }
+        
+        /* Grid Layout Fixes */
+        .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; width: 100%; max-width: 600px; }
+        .keyboard-grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 4px; width: 100%; max-width: 500px; }
+
+        /* Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 <script type="importmap">
 {
@@ -37,112 +68,204 @@
 </head>
 <body>
     <div id="loading-overlay">
-        <div class="loader-castle">🏰</div>
-        <div class="text-xl font-bold mt-4 uppercase tracking-tighter">正在点亮王国星火...</div>
+        <div class="text-8xl mb-6">🏰</div>
+        <div class="text-2xl font-black mb-4 tracking-widest text-indigo-300">PIXEL WORD KINGDOM</div>
         <div class="progress-container"><div id="progress-bar"></div></div>
-        <div id="loading-status" class="mt-2 text-xs text-indigo-400 font-mono">正在解析魔法卷轴...</div>
+        <div class="mt-2 text-xs text-indigo-400 font-mono tracking-widest">LOADING MAGIC SCROLLS...</div>
     </div>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        /** ================= DATA (200+ WORDS) ================= **/
+        /** ================= FULL VOCABULARY (UNITS 1-8) ================= **/
         const RAW_WORDS = {
             1: [
-                { id: 'u1-1', english: 'ancient', chinese: '古代的', pos: 'adj', example: 'This is an ancient building.' },
-                { id: 'u1-2', english: 'camp', chinese: '营地', pos: 'n', example: 'We stay at the camp.' },
-                { id: 'u1-3', english: 'landscape', chinese: '风景', pos: 'n', example: 'The landscape is beautiful.' },
-                { id: 'u1-4', english: 'strange', chinese: '奇怪的', pos: 'adj', example: 'That is a strange bird.' },
-                { id: 'u1-5', english: 'vacation', chinese: '假期', pos: 'n', example: 'I like my summer vacation.' },
-                { id: 'u1-6', english: 'fantastic', chinese: '极好的', pos: 'adj', example: 'We had a fantastic time.' },
-                { id: 'u1-7', english: 'town', chinese: '城镇', pos: 'n', example: 'My town is very small.' },
-                { id: 'u1-8', english: 'comfortable', chinese: '舒适的', pos: 'adj', example: 'This sofa is comfortable.' }
+                { english: 'ancient', chinese: '古代的', pos: 'adj', example: 'This is an ancient building.' },
+                { english: 'landscape', chinese: '风景', pos: 'n', example: 'The landscape is beautiful.' },
+                { english: 'fantastic', chinese: '极好的', pos: 'adj', example: 'We had a fantastic time.' },
+                { english: 'comfortable', chinese: '舒适的', pos: 'adj', example: 'This sofa is comfortable.' },
+                { english: 'vacation', chinese: '假期', pos: 'n', example: 'I like my summer vacation.' },
+                { english: 'strange', chinese: '奇怪的', pos: 'adj', example: 'That is a strange bird.' },
+                { english: 'town', chinese: '城镇', pos: 'n', example: 'My town is very small.' },
+                { english: 'scenery', chinese: '景色', pos: 'n', example: 'I love mountain scenery.' }
             ],
             2: [
-                { id: 'u2-1', english: 'kitchen', chinese: '厨房', pos: 'n', example: 'Mom is in the kitchen.' },
-                { id: 'u2-2', english: 'furniture', chinese: '家具', pos: 'n', example: 'We bought new furniture.' },
-                { id: 'u2-3', english: 'fridge', chinese: '冰箱', pos: 'n', example: 'Milk is in the fridge.' },
-                { id: 'u2-4', english: 'bathroom', chinese: '浴室', pos: 'n', example: 'The bathroom is clean.' },
-                { id: 'u2-5', english: 'mirror', chinese: '镜子', pos: 'n', example: 'Look in the mirror.' },
-                { id: 'u2-6', english: 'garden', chinese: '花园', pos: 'n', example: 'Flowers in the garden.' },
-                { id: 'u2-7', english: 'neighbor', chinese: '邻居', pos: 'n', example: 'He is my neighbor.' },
-                { id: 'u2-8', english: 'decorate', chinese: '装饰', pos: 'v', example: 'Decorate the tree.' }
+                { english: 'bathroom', chinese: '浴室', pos: 'n', example: 'The bathroom is clean.' },
+                { english: 'kitchen', chinese: '厨房', pos: 'n', example: 'Mom is in the kitchen.' },
+                { english: 'furniture', chinese: '家具', pos: 'n', example: 'We bought new furniture.' },
+                { english: 'fridge', chinese: '冰箱', pos: 'n', example: 'Milk is in the fridge.' },
+                { english: 'mirror', chinese: '镜子', pos: 'n', example: 'Look in the mirror.' },
+                { english: 'garden', chinese: '花园', pos: 'n', example: 'Flowers in the garden.' },
+                { english: 'neighbor', chinese: '邻居', pos: 'n', example: 'He is my neighbor.' },
+                { english: 'bedroom', chinese: '卧室', pos: 'n', example: 'Go to your bedroom.' }
             ],
             3: [
-                { id: 'u3-1', english: 'subject', chinese: '科目', pos: 'n', example: 'Math is my favorite subject.' },
-                { id: 'u3-2', english: 'science', chinese: '科学', pos: 'n', example: 'We learn science.' },
-                { id: 'u3-3', english: 'project', chinese: '项目', pos: 'n', example: 'We finished the project.' },
-                { id: 'u3-4', english: 'grade', chinese: '成绩', pos: 'n', example: 'She got a high grade.' }
+                { english: 'subject', chinese: '科目', pos: 'n', example: 'Math is my favorite subject.' },
+                { english: 'science', chinese: '科学', pos: 'n', example: 'We learn science.' },
+                { english: 'project', chinese: '项目', pos: 'n', example: 'We finished the project.' },
+                { english: 'grade', chinese: '成绩', pos: 'n', example: 'She got a high grade.' },
+                { english: 'library', chinese: '图书馆', pos: 'n', example: 'I study in the library.' },
+                { english: 'student', chinese: '学生', pos: 'n', example: 'He is a good student.' },
+                { english: 'teacher', chinese: '老师', pos: 'n', example: 'My teacher is kind.' },
+                { english: 'classroom', chinese: '教室', pos: 'n', example: 'Our classroom is bright.' }
             ],
-            // 更多 Unit 数据省略，此处仅为示例，正式版应包含 Unit 1-8 约 200+ 词汇
+            4: [
+                { english: 'explore', chinese: '探索', pos: 'v', example: 'We will explore the forest.' },
+                { english: 'journey', chinese: '旅程', pos: 'n', example: 'Our journey was long.' },
+                { english: 'direction', chinese: '方向', pos: 'n', example: 'Walk in the right direction.' },
+                { english: 'map', chinese: '地图', pos: 'n', example: 'I cannot read the map.' },
+                { english: 'wild', chinese: '野生的', pos: 'adj', example: 'Wild flowers are beautiful.' },
+                { english: 'backpack', chinese: '背包', pos: 'n', example: 'Put water into your backpack.' },
+                { english: 'adventure', chinese: '冒险', pos: 'n', example: 'Life is an adventure.' },
+                { english: 'danger', chinese: '危险', pos: 'n', example: 'We are in great danger.' }
+            ],
+            5: [
+                { english: 'health', chinese: '健康', pos: 'n', example: 'Health is very important.' },
+                { english: 'exercise', chinese: '运动', pos: 'v', example: 'You should exercise daily.' },
+                { english: 'doctor', chinese: '医生', pos: 'n', example: 'The doctor is very kind.' },
+                { english: 'fresh', chinese: '新鲜的', pos: 'adj', example: 'The air is very fresh.' },
+                { english: 'vegetable', chinese: '蔬菜', pos: 'n', example: 'Eat green vegetables.' },
+                { english: 'sleep', chinese: '睡觉', pos: 'v', example: 'I sleep eight hours.' },
+                { english: 'happy', chinese: '快乐的', pos: 'adj', example: 'I am happy to see you.' },
+                { english: 'check', chinese: '检查', pos: 'v', example: 'Check your work again.' }
+            ],
+            6: [
+                { english: 'technology', chinese: '技术', pos: 'n', example: 'Technology makes life easy.' },
+                { english: 'internet', chinese: '互联网', pos: 'n', example: 'We use the internet.' },
+                { english: 'computer', chinese: '电脑', pos: 'n', example: 'I have a new computer.' },
+                { english: 'robot', chinese: '机器人', pos: 'n', example: 'The robot can help us.' },
+                { english: 'future', chinese: '未来', pos: 'n', example: 'Who knows the future?' },
+                { english: 'power', chinese: '力量', pos: 'n', example: 'Knowledge is power.' },
+                { english: 'charge', chinese: '充电', pos: 'v', example: 'I must charge my phone.' },
+                { english: 'smart', chinese: '聪明的', pos: 'adj', example: 'He is a smart boy.' }
+            ],
+            7: [
+                { english: 'breakfast', chinese: '早餐', pos: 'n', example: 'I have eggs for breakfast.' },
+                { english: 'restaurant', chinese: '饭馆', pos: 'n', example: 'Let us go to a restaurant.' },
+                { english: 'menu', chinese: '菜单', pos: 'n', example: 'Can I see the menu?' },
+                { english: 'delicious', chinese: '美味的', pos: 'adj', example: 'The food is delicious.' },
+                { english: 'sweet', chinese: '甜的', pos: 'adj', example: 'This apple is sweet.' },
+                { english: 'chef', chinese: '厨师', pos: 'n', example: 'He is a great chef.' },
+                { english: 'drink', chinese: '喝', pos: 'v', example: 'Drink more water.' },
+                { english: 'thirsty', chinese: '渴的', pos: 'adj', example: 'I am thirsty.' }
+            ],
+            8: [
+                { english: 'knowledge', chinese: '知识', pos: 'n', example: 'Reading gives us knowledge.' },
+                { english: 'wisdom', chinese: '智慧', pos: 'n', example: 'The old man has wisdom.' },
+                { english: 'memory', chinese: '记忆', pos: 'n', example: 'He has a good memory.' },
+                { english: 'problem', chinese: '问题', pos: 'n', example: 'Solve the math problem.' },
+                { english: 'courage', chinese: '勇气', pos: 'n', example: 'You have courage to try.' },
+                { english: 'success', chinese: '成功', pos: 'n', example: 'Work brings success.' },
+                { english: 'dream', chinese: '梦想', pos: 'n', example: 'Follow your dream.' },
+                { english: 'expert', chinese: '专家', pos: 'n', example: 'He is a computer expert.' }
+            ]
         };
 
-        const WORLDS = [
-            { id: 1, name: "Ancient Valley (Unit 1)", color: "#10b981" },
-            { id: 2, name: "Cozy Home (Unit 2)", color: "#f59e0b" },
-            { id: 3, name: "Social Plaza (Unit 3)", color: "#3b82f6" },
-            { id: 4, name: "Adventure Peak (Unit 4)", color: "#8b5cf6" },
-            { id: 5, name: "Health Canyon (Unit 5)", color: "#6366f1" },
-            { id: 6, name: "Future City (Unit 6)", color: "#06b6d4" },
-            { id: 7, name: "Gourmet Island (Unit 7)", color: "#f43f5e" },
-            { id: 8, name: "Wisdom Temple (Unit 8)", color: "#f97316" }
-        ];
-
         const HEROES = [
-            { id: 'h1', name: 'Princess Sky', color: '#fbc02d', desc: '灵动如风，掌握词法秘境。', sprite: 'alice' },
-            { id: 'h2', name: 'Prince Valiant', color: '#e53935', desc: '勇敢守护，击碎一切障碍。', sprite: 'prince' },
-            { id: 'h3', name: 'Red Hood', color: '#c62828', desc: '穿梭林间，寻找真理。', sprite: 'red' },
-            { id: 'h4', name: 'Earth Ivy', color: '#81c784', desc: '厚积薄发，深扎根基。', sprite: 'ivy' }
+            { id: 'alice', name: 'Princess Sky', color: '#4fc3f7', hair: '#fbc02d', power: 'Wind', desc: '灵动如风，掌握词法秘境。' },
+            { id: 'prince', name: 'Valiant Prince', color: '#e53935', hair: '#4e342e', power: 'Fire', desc: '勇敢守护，击碎单词障碍。' },
+            { id: 'red', name: 'Little Red', color: '#c62828', hair: '#212121', power: 'Night', desc: '穿梭林间，寻找真理。' },
+            { id: 'ivy', name: 'Princess Ivy', color: '#81c784', hair: '#fff59d', power: 'Earth', desc: '厚积薄发，深扎词根。' }
         ];
 
         /** ================= COMPONENTS ================= **/
 
-        const PixelSprite = ({ type, variant, color, action }) => {
+        const PixelSprite = ({ type, variant, action }) => {
             const isHit = action === 'hit';
             const isAttack = action === 'attack';
+            const hero = HEROES.find(h => h.id === variant) || HEROES[0];
             
             return (
-                <div className={`relative w-24 h-24 flex items-end justify-center transition-all ${isAttack ? 'translate-x-4' : ''} ${isHit ? 'animate-bounce' : 'animate-pulse'}`}>
+                <div className={`relative w-32 h-32 flex items-end justify-center transition-all duration-300 ${isAttack ? (type === 'hero' ? 'translate-x-12' : '-translate-x-12') : ''} ${isHit ? 'shake-effect grayscale' : ''}`}>
                     <svg width="100%" height="100%" viewBox="0 0 100 120">
-                        {/* 动态角色渲染 (根据 variant 选择 SVG 结构) */}
-                        <g style={{ filter: isHit ? 'grayscale(1) brightness(2)' : 'none' }}>
-                            <circle cx="50" cy="40" r="30" fill="#ffe0b2" stroke="black" strokeWidth="4" />
-                            <rect x="25" y="70" width="50" height="40" fill={color} stroke="black" strokeWidth="4" />
-                            <circle cx="40" cy="40" r="4" fill="black" />
-                            <circle cx="60" cy="40" r="4" fill="black" />
-                            {variant === 'alice' && <path d="M20,30 Q10,70 30,100" fill="none" stroke="#fbc02d" strokeWidth="8" />}
+                        <g transform="translate(0, 0)">
+                            {/* Chibi Hair Back */}
+                            <path d="M20,35 Q10,75 25,100 Q50,115 75,100 Q90,75 80,35" fill={hero.hair} stroke="black" strokeWidth="3" />
+                            {/* Body */}
+                            <rect x="35" y="75" width="30" height="35" fill={hero.color} stroke="black" strokeWidth="3" />
+                            {/* Head */}
+                            <circle cx="50" cy="40" r="28" fill="#ffe0b2" stroke="black" strokeWidth="3" />
+                            {/* Face */}
+                            <circle cx="42" cy="40" r="3" fill="black" />
+                            <circle cx="58" cy="40" r="3" fill="black" />
+                            <path d="M45,55 Q50,58 55,55" fill="none" stroke="black" strokeWidth="2" />
+                            {/* Character Specifics */}
+                            {variant === 'alice' && <path d="M35,12 Q50,6 65,12" fill="none" stroke="#1565c0" strokeWidth="5" />}
+                            {variant === 'prince' && <path d="M40,12 L45,2 L50,8 L55,2 L60,12 Z" fill="#ffd600" stroke="black" strokeWidth="2" />}
+                            {variant === 'red' && <path d="M22,42 Q25,10 50,10 Q75,10 78,42 Q50,25 22,42" fill="#c62828" stroke="black" strokeWidth="2" />}
                         </g>
                     </svg>
-                    {isHit && <div className="absolute top-0 text-red-500 font-black text-2xl">-10</div>}
+                    {isHit && <div className="absolute top-0 text-red-500 font-black text-2xl animate-bounce">-10 HP</div>}
+                    {action === 'win' && <div className="absolute top-[-20px] text-yellow-400 text-3xl animate-pulse">👑</div>}
                 </div>
             );
         };
 
-        const BattleArea = ({ hero, monsterColor, heroAction, monsterAction, showFireball }) => (
-            <div className="w-full h-52 pixel-border bg-sky-200 rounded-[30px] flex items-end justify-between px-12 pb-6 relative overflow-hidden mb-6">
-                <div className="absolute inset-0 bg-gradient-to-b from-sky-400 to-green-300 opacity-60"></div>
-                <PixelSprite type="hero" variant={hero.sprite} color={hero.color} action={heroAction} />
-                
-                {/* 火球动画 */}
-                {showFireball && (
-                    <div className="fireball" style={{ left: '100px', bottom: '60px', transform: 'translateX(300px)' }}>🔥</div>
-                )}
+        const MonsterSprite = ({ type, action }) => {
+            const isHit = action === 'hit';
+            return (
+                <div className={`relative w-32 h-32 flex items-end justify-center transition-all duration-300 ${isHit ? 'shake-effect brightness-150' : 'animate-pulse'}`}>
+                    <svg width="100%" height="100%" viewBox="0 0 100 100">
+                        <path d="M20,80 Q20,30 50,30 Q80,30 80,80 Z" fill={type === 1 ? "#4caf50" : (type === 2 ? "#7e57c2" : "#f44336")} stroke="black" strokeWidth="4" />
+                        <circle cx="40" cy="55" r="8" fill="white" stroke="black" strokeWidth="2" />
+                        <circle cx="60" cy="55" r="8" fill="white" stroke="black" strokeWidth="2" />
+                        <circle cx="42" cy="57" r="3" fill="black" />
+                        <circle cx="62" cy="57" r="3" fill="black" />
+                    </svg>
+                </div>
+            );
+        };
 
-                <PixelSprite type="monster" variant="blob" color={monsterColor} action={monsterAction} />
+        const BattleArea = ({ heroId, monsterType, heroAction, monsterAction, isFiring }) => (
+            <div className="w-full h-56 pixel-border bg-sky-200 rounded-[40px] flex items-end justify-between px-16 pb-8 relative overflow-hidden mb-8 shadow-inner">
+                <div className="absolute inset-0 bg-gradient-to-b from-sky-400 to-green-300 opacity-60"></div>
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/30 px-6 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white border-2 border-white/50">
+                    BATTLE FIELD: {monsterType === 1 ? 'SWAMP BLOB' : (monsterType === 2 ? 'MAGIC JELLY' : 'ANCIENT KING')}
+                </div>
+                
+                <PixelSprite type="hero" variant={heroId} action={heroAction} />
+                
+                {isFiring && (
+                    <div className="absolute left-[120px] bottom-[80px] text-4xl fireball-active">🔥</div>
+                )}
+                
+                <MonsterSprite type={monsterType} action={monsterAction} />
+                
+                {monsterAction === 'hit' && <div className="absolute right-32 top-1/2 font-black text-red-600 text-2xl animate-ping uppercase">Wham!</div>}
+                {heroAction === 'hit' && <div className="absolute left-32 top-1/2 font-black text-orange-600 text-2xl animate-ping uppercase">Ouch!</div>}
             </div>
         );
 
-        /** ================= GAME STAGES ================= **/
+        /** ================= GAME LOGIC ================= **/
 
-        const StageOne = ({ words, hero, onComplete }) => {
+        const RecallHint = ({ word }) => (
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+                <div className="bg-white p-8 pixel-border text-indigo-900 max-w-sm w-full animate-bounce">
+                    <div className="text-red-600 font-black text-xs uppercase mb-2 tracking-widest border-b-2 border-red-100 pb-1">Wisdom Scroll (Recall Hint)</div>
+                    <div className="text-3xl font-black mb-1 uppercase tracking-tighter">{word.english}</div>
+                    <div className="text-xl font-bold mb-4">意思: {word.chinese} ({word.pos}.)</div>
+                    <div className="bg-indigo-50 p-4 border-2 border-indigo-100 rounded-xl italic text-sm">
+                        "{word.example}"
+                    </div>
+                    <div className="mt-6 text-center text-xs font-black text-indigo-300 animate-pulse">点击背景关闭并重试</div>
+                </div>
+            </div>
+        );
+
+        const StageOne = ({ words, heroId, onComplete }) => {
             const [idx, setIdx] = useState(0);
             const [feedback, setFeedback] = useState(null);
             const [showHint, setShowHint] = useState(false);
             const word = words[idx];
 
             const options = useMemo(() => {
-                const choices = [word.chinese, "错误项A", "错误项B", "错误项C"];
+                const choices = [word.chinese];
+                const pool = Object.values(RAW_WORDS).flat().filter(w => w.chinese !== word.chinese);
+                while(choices.length < 4) {
+                    const r = pool[Math.floor(Math.random() * pool.length)].chinese;
+                    if(!choices.includes(r)) choices.push(r);
+                }
                 return choices.sort(() => Math.random() - 0.5);
             }, [idx]);
 
@@ -162,30 +285,25 @@
             };
 
             return (
-                <div className="h-full flex flex-col p-4">
-                    <BattleArea hero={hero} monsterColor="#475569" heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} showFireball={feedback==='correct'} />
-                    <div className="flex-1 flex flex-col items-center justify-center gap-6">
-                        <div className="text-6xl font-black uppercase text-indigo-900 tracking-tighter">{word.english}</div>
-                        <div className="grid grid-cols-2 gap-4 w-full max-w-xl">
-                            {options.map((opt, i) => (
-                                <button key={i} onClick={() => handleAnswer(opt)} className="pixel-button text-xl h-20">{opt}</button>
-                            ))}
-                        </div>
-                        {showHint && (
-                            <div className="mt-4 p-4 bg-yellow-100 border-4 border-black text-indigo-900 font-bold animate-bounce">
-                                💡 提示：{word.english} 的意思是 "{word.chinese}"
-                            </div>
-                        )}
+                <div className="h-full flex flex-col items-center">
+                    <BattleArea heroId={heroId} monsterType={1} heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} isFiring={feedback==='correct'} />
+                    <div className="text-7xl font-black text-indigo-900 uppercase tracking-tighter mb-8">{word.english}</div>
+                    <div className="game-grid">
+                        {options.map((opt, i) => (
+                            <button key={i} onClick={() => handleAnswer(opt)} className="pixel-button text-xl h-24">{opt}</button>
+                        ))}
                     </div>
+                    {showHint && <div className="fixed inset-0" onClick={() => setShowHint(false)}><RecallHint word={word} /></div>}
                 </div>
             );
         };
 
-        const StageTwo = ({ words, hero, onComplete }) => {
+        const StageTwo = ({ words, heroId, onComplete }) => {
             const [idx, setIdx] = useState(0);
             const [feedback, setFeedback] = useState(null);
+            const [showHint, setShowHint] = useState(false);
             const word = words[idx];
-            
+
             const display = useMemo(() => {
                 const arr = word.english.split('');
                 const blankIdx = Math.floor(arr.length / 2);
@@ -195,12 +313,66 @@
             }, [idx]);
 
             const handleKey = (l) => {
-                if(l === display.missing) {
+                if (l === display.missing) {
                     setFeedback('correct');
                     setTimeout(() => {
                         setFeedback(null);
-                        if(idx + 1 < words.length) setIdx(idx + 1);
+                        if (idx + 1 < words.length) setIdx(idx + 1);
                         else onComplete();
+                    }, 800);
+                } else {
+                    setFeedback('wrong');
+                    setShowHint(true);
+                    setTimeout(() => setFeedback(null), 800);
+                }
+            };
+
+            return (
+                <div className="h-full flex flex-col items-center">
+                    <BattleArea heroId={heroId} monsterType={2} heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} isFiring={feedback==='correct'} />
+                    <div className="text-3xl font-black text-indigo-500 mb-2 uppercase">{word.chinese} ({word.pos}.)</div>
+                    <div className="text-8xl font-black text-indigo-900 tracking-[0.2em] mb-10">{display.text.toUpperCase()}</div>
+                    <div className="keyboard-grid">
+                        {"abcdefghijklmnopqrstuvwxyz".split('').map(l => (
+                            <button key={l} onClick={() => handleKey(l)} className="pixel-border bg-white text-black font-black uppercase text-xs h-10 hover:bg-indigo-100">{l}</button>
+                        ))}
+                    </div>
+                    {showHint && <div className="fixed inset-0" onClick={() => setShowHint(false)}><RecallHint word={word} /></div>}
+                </div>
+            );
+        };
+
+        const StageThree = ({ words, heroId, onComplete }) => {
+            const [idx, setIdx] = useState(0);
+            const [selected, setSelected] = useState([]);
+            const [feedback, setFeedback] = useState(null);
+            const word = words[idx];
+            
+            const correctSeq = word.example.replace(/[.!?]/g, '').split(' ');
+            const [pool, setPool] = useState([...correctSeq].sort(() => Math.random() - 0.5));
+
+            const toggle = (w, isPool) => {
+                if(isPool) {
+                    setSelected([...selected, w]);
+                    const nPool = [...pool]; nPool.splice(nPool.indexOf(w), 1);
+                    setPool(nPool);
+                } else {
+                    setPool([...pool, w]);
+                    const nSelected = [...selected]; nSelected.splice(nSelected.indexOf(w), 1);
+                    setSelected(nSelected);
+                }
+            };
+
+            const verify = () => {
+                if(selected.join(' ') === correctSeq.join(' ')) {
+                    setFeedback('correct');
+                    setTimeout(() => {
+                        setFeedback(null);
+                        if(idx + 1 < words.length) {
+                            setIdx(idx + 1); setSelected([]);
+                            const next = words[idx+1].example.replace(/[.!?]/g, '').split(' ');
+                            setPool([...next].sort(() => Math.random() - 0.5));
+                        } else onComplete();
                     }, 800);
                 } else {
                     setFeedback('wrong');
@@ -209,17 +381,16 @@
             };
 
             return (
-                <div className="h-full flex flex-col p-4">
-                    <BattleArea hero={hero} monsterColor="#059669" heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} showFireball={feedback==='correct'} />
-                    <div className="flex-1 flex flex-col items-center justify-center gap-8">
-                        <div className="text-4xl font-black text-indigo-900">{word.chinese}</div>
-                        <div className="text-8xl font-black text-indigo-900 tracking-widest">{display.text.toUpperCase()}</div>
-                        <div className="flex flex-wrap justify-center gap-2 max-w-xl">
-                            {"abcdefghijklmnopqrstuvwxyz".split('').map(l => (
-                                <button key={l} onClick={() => handleKey(l)} className="w-10 h-10 pixel-border bg-white text-black font-bold hover:bg-indigo-100 uppercase">{l}</button>
-                            ))}
-                        </div>
+                <div className="h-full flex flex-col items-center">
+                    <BattleArea heroId={heroId} monsterType={3} heroAction={feedback==='correct'?'attack':'idle'} monsterAction={feedback==='wrong'?'attack':(feedback==='correct'?'hit':'idle')} isFiring={feedback==='correct'} />
+                    <div className="text-2xl font-black text-indigo-400 mb-6 tracking-wide">MAGIC SPELL: {word.chinese}</div>
+                    <div className="w-full max-w-2xl min-h-[100px] pixel-border bg-white/20 p-4 flex flex-wrap gap-3 mb-8 rounded-2xl">
+                        {selected.map((w, i) => <button key={i} onClick={()=>toggle(w, false)} className="pixel-button bg-indigo-600 text-sm py-2 px-4">{w}</button>)}
                     </div>
+                    <div className="flex flex-wrap gap-2 justify-center mb-8">
+                        {pool.map((w, i) => <button key={i} onClick={()=>toggle(w, true)} className="pixel-button bg-white text-indigo-900 text-sm py-2 px-4">{w}</button>)}
+                    </div>
+                    <button onClick={verify} disabled={selected.length === 0} className="pixel-button bg-yellow-400 text-indigo-900 text-2xl px-12 py-4">释放咒语</button>
                 </div>
             );
         };
@@ -227,30 +398,33 @@
         /** ================= MAIN APP ================= **/
         const App = () => {
             const [state, setState] = useState('LOGIN');
-            const [user, setUser] = useState({ id: '勇者', unlocked: [1] });
+            const [user, setUser] = useState({ id: '勇者', stars: 0 });
             const [hero, setHero] = useState(null);
             const [world, setWorld] = useState(null);
             const [stage, setStage] = useState(1);
 
             if (state === 'LOGIN') return (
                 <div className="h-screen flex flex-col items-center justify-center bg-indigo-900 p-8">
+                    <div className="text-9xl mb-12 floating">📖</div>
                     <div className="bg-white p-12 pixel-border flex flex-col gap-8 max-w-sm w-full">
                         <h1 className="text-4xl font-black text-center text-indigo-900 uppercase tracking-tighter">Word Kingdom</h1>
-                        <input id="uname" className="border-4 border-black p-4 text-xl font-bold text-indigo-900 outline-none" placeholder="输入 ID" defaultValue="Player1" />
-                        <button onClick={() => { setUser({...user, id: document.getElementById('uname').value}); setState('HERO'); }} className="pixel-button bg-yellow-400 text-indigo-900 text-2xl font-black">开始冒险</button>
+                        <input id="uname" className="border-4 border-black p-4 text-xl font-bold text-indigo-900 outline-none" placeholder="输入你的 ID" defaultValue="Player1" />
+                        <button onClick={() => { setUser({...user, id: document.getElementById('uname').value}); setState('HERO'); }} className="pixel-button bg-yellow-400 text-indigo-900 text-2xl font-black">进入王国</button>
                     </div>
                 </div>
             );
 
             if (state === 'HERO') return (
                 <div className="h-screen bg-indigo-950 p-8 flex flex-col items-center justify-center">
-                    <h2 className="text-3xl font-black mb-12">选择你的守护者</h2>
-                    <div className="flex gap-6 overflow-x-auto w-full max-w-5xl px-4 pb-8">
+                    <h2 className="text-4xl font-black mb-16 tracking-widest">选择你的守护勇者</h2>
+                    <div className="flex gap-8 overflow-x-auto w-full max-w-6xl px-4 pb-12 no-scrollbar">
                         {HEROES.map(h => (
-                            <div key={h.id} onClick={() => { setHero(h); setState('MAP'); }} className="min-w-[240px] bg-white p-8 pixel-border text-indigo-900 cursor-pointer hover:bg-yellow-50 hover:-translate-y-2 transition-all flex flex-col items-center">
-                                <PixelSprite variant={h.sprite} color={h.color} action="idle" />
-                                <div className="mt-6 font-black text-2xl">{h.name}</div>
-                                <div className="mt-4 text-sm text-center font-medium opacity-70">{h.desc}</div>
+                            <div key={h.id} onClick={() => { setHero(h); setState('MAP'); }} className="min-w-[280px] bg-white p-10 pixel-border text-indigo-900 cursor-pointer hover:bg-yellow-50 hover:-translate-y-4 transition-all flex flex-col items-center group">
+                                <PixelSprite variant={h.id} action="idle" />
+                                <div className="mt-8 font-black text-3xl">{h.name}</div>
+                                <div className="mt-2 text-sm font-black text-indigo-400 uppercase tracking-widest">{h.power} Power</div>
+                                <div className="mt-6 text-sm text-center font-medium opacity-70 leading-relaxed">{h.desc}</div>
+                                <div className="mt-8 pixel-button bg-indigo-600 text-white w-full text-center py-2 group-hover:bg-indigo-700 transition-colors">选择</div>
                             </div>
                         ))}
                     </div>
@@ -258,16 +432,25 @@
             );
 
             if (state === 'MAP') return (
-                <div className="h-screen bg-sky-100 p-8 overflow-y-auto">
+                <div className="h-screen bg-sky-100 p-8 overflow-y-auto no-scrollbar">
                     <div className="max-w-4xl mx-auto flex flex-col gap-10">
-                        <h1 className="text-4xl font-black text-indigo-900 text-center uppercase tracking-widest">Adventure Map</h1>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {WORLDS.map(w => (
-                                <div key={w.id} className="bg-white p-8 pixel-border group relative overflow-hidden">
-                                    <div className="text-2xl font-black mb-6 text-indigo-900">{w.name}</div>
-                                    <div className="flex gap-4">
+                        <header className="flex justify-between items-center bg-white p-6 pixel-border">
+                            <h1 className="text-4xl font-black text-indigo-900 uppercase tracking-widest">Adventure Map</h1>
+                            <div className="flex items-center gap-4">
+                                <span className="bg-indigo-100 px-4 py-2 rounded-full font-black text-indigo-900">勇者: {user.id}</span>
+                                <span className="bg-yellow-400 px-4 py-2 rounded-full font-black text-indigo-900">⭐ {user.stars}</span>
+                            </div>
+                        </header>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            {Object.entries(RAW_WORDS).map(([id, words]) => (
+                                <div key={id} className="bg-white p-10 pixel-border group relative overflow-hidden flex flex-col justify-between min-h-[220px]">
+                                    <div className="flex justify-between items-start">
+                                        <div className="text-3xl font-black text-indigo-900 uppercase">Unit {id}</div>
+                                        <div className="text-xs font-black text-indigo-300">8核心词汇</div>
+                                    </div>
+                                    <div className="flex gap-6 mt-8">
                                         {[1, 2, 3].map(s => (
-                                            <button key={s} onClick={() => { setWorld(w); setStage(1); setState('GAME'); }} className="w-14 h-14 bg-white border-4 border-black font-black text-xl hover:bg-indigo-600 hover:text-white flex items-center justify-center shadow-[4px_4px_0_black]">
+                                            <button key={s} onClick={() => { setWorld(id); setStage(1); setState('GAME'); }} className="w-16 h-16 bg-white border-4 border-black font-black text-2xl hover:bg-indigo-600 hover:text-white flex items-center justify-center shadow-[4px_4px_0_black] active:translate-x-1 active:translate-y-1 active:shadow-none">
                                                 {s}
                                             </button>
                                         ))}
@@ -280,23 +463,21 @@
             );
 
             if (state === 'GAME') {
-                const words = RAW_WORDS[world.id] || RAW_WORDS[1];
+                const words = RAW_WORDS[world] || RAW_WORDS[1];
                 return (
                     <div className="h-screen bg-sky-50 flex flex-col">
-                        <div className="h-16 flex justify-between items-center px-8 border-b-4 border-black bg-white">
-                            <button onClick={() => setState('MAP')} className="text-red-500 font-black">退出</button>
-                            <div className="font-black text-indigo-900 uppercase">阶段 {stage}/3</div>
+                        <div className="h-20 flex justify-between items-center px-12 border-b-4 border-black bg-white shadow-md">
+                            <button onClick={() => setState('MAP')} className="text-red-500 font-black text-xl hover:scale-110 transition-transform">撤退</button>
+                            <div className="flex flex-col items-center">
+                                <div className="text-[10px] font-black uppercase text-indigo-300">Unit {world} 挑战中</div>
+                                <div className="text-2xl font-black text-indigo-900 uppercase tracking-widest">阶段 {stage}/3</div>
+                            </div>
+                            <div className="w-10"></div>
                         </div>
-                        <div className="flex-1">
-                            {stage === 1 && <StageOne words={words} hero={hero} onComplete={() => setStage(2)} />}
-                            {stage === 2 && <StageTwo words={words} hero={hero} onComplete={() => setStage(3)} />}
-                            {stage === 3 && (
-                                <div className="h-full flex flex-col items-center justify-center gap-10">
-                                    <div className="text-4xl font-black text-indigo-900">魔法大结局</div>
-                                    <div className="text-2xl font-medium max-w-md text-center">最后一关：运用单词的力量，摧毁最终堡垒！</div>
-                                    <button onClick={() => setState('WIN')} className="pixel-button bg-yellow-400 text-indigo-900 px-12 py-6 text-2xl">发起最终攻击</button>
-                                </div>
-                            )}
+                        <div className="flex-1 p-10">
+                            {stage === 1 && <StageOne words={words} heroId={hero.id} onComplete={() => setStage(2)} />}
+                            {stage === 2 && <StageTwo words={words} heroId={hero.id} onComplete={() => setStage(3)} />}
+                            {stage === 3 && <StageThree words={words} heroId={hero.id} onComplete={() => { setUser({...user, stars: user.stars+1}); setState('WIN'); }} />}
                         </div>
                     </div>
                 );
@@ -304,10 +485,11 @@
 
             if (state === 'WIN') return (
                 <div className="h-screen flex flex-col items-center justify-center bg-emerald-600 text-white p-8">
-                    <div className="text-9xl floating mb-8">🏆</div>
-                    <h2 className="text-6xl font-black mb-4 uppercase">冒险大获全胜！</h2>
-                    <p className="text-2xl font-bold opacity-80 mb-12">你已成为单词王国的传奇。</p>
-                    <button onClick={() => setState('MAP')} className="pixel-button bg-yellow-400 text-indigo-900 px-12 py-6 text-2xl">回到地图</button>
+                    <div className="text-9xl floating mb-12">🏆</div>
+                    <PixelSprite variant={hero.id} action="win" />
+                    <h2 className="text-7xl font-black mt-8 mb-6 uppercase tracking-tighter">词法之战大胜！</h2>
+                    <p className="text-3xl font-bold opacity-80 mb-16">你的智慧点亮了这片迷雾领地。</p>
+                    <button onClick={() => setState('MAP')} className="pixel-button bg-yellow-400 text-indigo-900 px-20 py-8 text-3xl font-black">返回王城</button>
                 </div>
             );
 
@@ -320,12 +502,12 @@
     </script>
 
     <script>
-        // 加载逻辑
+        // Progress Logic
         const progressBar = document.getElementById('progress-bar');
         let p = 0;
         const itv = setInterval(() => {
-            if(p < 98) { p += Math.random()*10; progressBar.style.width = p + '%'; }
-        }, 150);
+            if(p < 95) { p += Math.random()*15; progressBar.style.width = p + '%'; }
+        }, 200);
         window.addEventListener('game-ready', () => {
             clearInterval(itv);
             progressBar.style.width = '100%';
