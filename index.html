@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kingdom of Words - 单词王国</title>
+    <title>Pixel Word Kingdom - 单词王国</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e1b4b">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,10 +12,10 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;500;700&display=swap');
         body { font-family: 'Quicksand', sans-serif; background-color: #1e1b4b; margin: 0; overflow: hidden; user-select: none; }
-        #loading-overlay { position: fixed; inset: 0; background: #1e1b4b; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; }
+        #loading-overlay { position: fixed; inset: 0; background: #1e1b4b; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; transition: opacity 0.5s; }
         .loader-castle { font-size: 80px; animation: bounce 1s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        #error-display { display: none; color: #ff4757; background: #2f3542; padding: 20px; border-radius: 10px; margin-top: 20px; max-width: 80%; font-family: monospace; font-size: 12px; }
+        #error-display { display: none; color: #ff4757; background: #2f3542; padding: 20px; border-radius: 10px; margin-top: 20px; max-width: 80%; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
     </style>
     <script type="importmap">
 {
@@ -28,7 +28,6 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <div id="loading-overlay">
@@ -38,22 +37,21 @@
     </div>
     <div id="root"></div>
 
-    <!-- 使用 Babel 直接加载合并后的 index.tsx -->
-    <script type="text/babel" data-presets="typescript,react" src="./index.tsx"></script>
+    <!-- 关键修复：添加 data-type="module" -->
+    <script type="text/babel" data-presets="typescript,react" data-type="module" src="./index.tsx"></script>
 
     <script>
-      // 捕获 Babel 或 React 的错误并显示
+      // 增强的错误捕获
       window.onerror = function(msg, url, line) {
         const errorDiv = document.getElementById('error-display');
         const loadingText = document.getElementById('loading-text');
         if (errorDiv) {
           errorDiv.style.display = 'block';
-          errorDiv.innerText = "魔法释放失败: " + msg + "\n行号: " + line;
+          errorDiv.innerText = "魔法释放失败:\n" + msg + "\n\n请确保已删除所有旧的 .ts/.tsx 文件，仅保留合并后的 index.tsx";
           loadingText.innerText = "王国召唤中断";
         }
       };
 
-      // 监听游戏准备就绪事件
       window.addEventListener('game-ready', () => {
         const loader = document.getElementById('loading-overlay');
         if (loader) {
@@ -62,6 +60,5 @@
         }
       });
     </script>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
