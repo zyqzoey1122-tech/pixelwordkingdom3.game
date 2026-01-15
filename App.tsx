@@ -28,8 +28,6 @@ const App: React.FC = () => {
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [userIdInput, setUserIdInput] = useState('');
   const [isMuted, setIsMuted] = useState(false);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -65,7 +63,6 @@ const App: React.FC = () => {
 
   const startLevel = (worldId: number, stageNum: number) => {
     const pool = RAW_WORDS[worldId] || [];
-    // 每个阶段分配 8 个单词进行循环练习
     const startIndex = (stageNum - 1) * 8;
     const stagePool = pool.slice(startIndex, startIndex + 8);
     
@@ -109,12 +106,12 @@ const App: React.FC = () => {
     setGameState('WIN');
   };
 
+  // ... 渲染逻辑保持不变 ...
   if (gameState === 'LOGIN') {
     return (
       <div className="h-screen bg-sky flex flex-col items-center justify-center gap-12 p-8 relative overflow-hidden">
         <div className="absolute top-20 left-20 w-40 h-16 bg-white rounded-full opacity-60 floating" />
         <div className="absolute top-40 right-20 w-32 h-12 bg-white rounded-full opacity-40 floating" style={{ animationDelay: '1s' }} />
-        
         <h1 className="text-6xl text-indigo-900 text-center font-black tracking-tighter uppercase drop-shadow-xl animate-[wiggle_4s_infinite]">Kingdom of Words</h1>
         <div className="bg-white p-10 pixel-border flex flex-col gap-6 w-full max-w-md shadow-2xl">
           <label className="text-sm text-indigo-900 font-bold uppercase tracking-wider text-center">勇者，请留下你的身份印记：</label>
