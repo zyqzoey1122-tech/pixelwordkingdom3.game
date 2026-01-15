@@ -18,7 +18,7 @@
         .progress-container { width: 280px; height: 12px; background: #312e81; border: 2px solid #4f46e5; border-radius: 20px; margin-top: 20px; overflow: hidden; position: relative; }
         #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5, #818cf8); transition: width 0.3s; }
         #loading-status { font-size: 12px; color: #818cf8; margin-top: 10px; font-family: monospace; }
-        #error-console { display: none; position: absolute; bottom: 20px; left: 20px; right: 20px; background: #7f1d1d; border: 2px solid #ef4444; padding: 15px; border-radius: 8px; color: #fecaca; font-family: monospace; font-size: 11px; max-height: 200px; overflow-y: auto; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        #error-console { display: none; position: absolute; bottom: 20px; left: 20px; right: 20px; background: #7f1d1d; border: 2px solid #ef4444; padding: 15px; border-radius: 8px; color: #fecaca; font-family: monospace; font-size: 11px; max-height: 250px; overflow-y: auto; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
     </style>
     <script type="importmap">
 {
@@ -35,12 +35,12 @@
 <body>
     <div id="loading-overlay">
         <div class="loader-castle">🏰</div>
-        <div class="text-xl font-bold mt-4 uppercase tracking-tighter">正在点亮王国星火</div>
+        <div id="loading-title" class="text-xl font-bold mt-4 uppercase tracking-tighter">正在点亮王国星火</div>
         <div class="progress-container"><div id="progress-bar"></div></div>
-        <div id="loading-status">准备就绪...</div>
+        <div id="loading-status">正在解析魔法卷轴...</div>
         <div id="error-console">
-            <div class="font-bold border-b border-red-400 mb-2 pb-1">⚠️ 检测到时空波动 (加载错误)：</div>
-            <pre id="error-text" style="white-space: pre-wrap;"></pre>
+            <div class="font-bold border-b border-red-400 mb-2 pb-1">⚠️ 检测到时空波动 (脚本运行错误)：</div>
+            <pre id="error-text" style="white-space: pre-wrap; font-size: 10px;"></pre>
             <button onclick="location.reload()" class="mt-4 bg-red-500 text-white px-3 py-1 rounded text-[10px] font-bold">强制重新同步</button>
         </div>
     </div>
@@ -50,30 +50,26 @@
         const loadingStatus = document.getElementById('loading-status');
         const errorConsole = document.getElementById('error-console');
         const errorText = document.getElementById('error-text');
+
         let progress = 0;
         const updateProgress = (val, status) => {
             progress = val;
             progressBar.style.width = progress + '%';
             if (status) loadingStatus.innerText = status;
         };
-        window.onerror = function(message, source, lineno) {
+
+        window.onerror = function(message, source, lineno, colno, error) {
             errorConsole.style.display = 'block';
-            const file = source ? source.split('/').pop() : '未知文件';
-            errorText.innerText += `\n[脚本错误] ${message}\n源文件: ${file}\n行号: ${lineno}\n`;
+            errorText.innerText += `\n[脚本异常] ${message}\n行号: ${lineno}\n`;
             return false;
         };
-        window.addEventListener('error', function(e) {
-            if (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK') {
-                errorConsole.style.display = 'block';
-                const file = (e.target.src || e.target.href || '').split('/').pop();
-                errorText.innerText += `\n[文件丢失] 无法找到: ${file}\n`;
-            }
-        }, true);
+
         let progressInterval = setInterval(() => {
-            if (progress < 90) {
-                updateProgress(progress + Math.random() * 5);
+            if (progress < 95) {
+                updateProgress(progress + Math.random() * 2);
             }
-        }, 400);
+        }, 300);
+
         window.addEventListener('game-ready', () => {
             clearInterval(progressInterval);
             updateProgress(100, "同步完成！");
