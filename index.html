@@ -11,11 +11,30 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;500;700&display=swap');
+        
+        :root { --bg-sky: #87ceeb; }
         body { font-family: 'Quicksand', sans-serif; background-color: #1e1b4b; margin: 0; overflow: hidden; user-select: none; }
+        
+        .bg-sky { background-color: var(--bg-sky); }
+        .pixel-border { border: 4px solid black; border-radius: 12px; box-shadow: 6px 6px 0px rgba(0,0,0,0.2); }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .floating { animation: float 3s ease-in-out infinite; }
+        
+        @keyframes wiggle { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+        .animate-wiggle { animation: wiggle 2s ease-in-out infinite; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
         #loading-overlay { position: fixed; inset: 0; background: #1e1b4b; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; transition: opacity 0.5s; }
         .loader-castle { font-size: 80px; animation: bounce 1s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        
         #error-display { display: none; color: #ff4757; background: #2f3542; padding: 20px; border-radius: 10px; margin-top: 20px; max-width: 80%; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+        
+        .pixel-button { background: #4f46e5; color: white; border: 4px solid black; padding: 12px 24px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: all 0.1s; box-shadow: 0 6px 0 black; border-radius: 8px; }
+        .pixel-button:active { transform: translateY(4px); box-shadow: 0 2px 0 black; }
+        .pixel-button:disabled { background: #9ca3af; cursor: not-allowed; opacity: 0.5; }
     </style>
     <script type="importmap">
 {
@@ -37,17 +56,15 @@
     </div>
     <div id="root"></div>
 
-    <!-- 关键修复：添加 data-type="module" -->
     <script type="text/babel" data-presets="typescript,react" data-type="module" src="./index.tsx"></script>
 
     <script>
-      // 增强的错误捕获
       window.onerror = function(msg, url, line) {
         const errorDiv = document.getElementById('error-display');
         const loadingText = document.getElementById('loading-text');
         if (errorDiv) {
           errorDiv.style.display = 'block';
-          errorDiv.innerText = "魔法释放失败:\n" + msg + "\n\n请确保已删除所有旧的 .ts/.tsx 文件，仅保留合并后的 index.tsx";
+          errorDiv.innerText = "魔法释放失败:\n" + msg;
           loadingText.innerText = "王国召唤中断";
         }
       };
