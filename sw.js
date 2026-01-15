@@ -1,12 +1,15 @@
 
-const CACHE_NAME = 'word-kingdom-v1';
+const CACHE_NAME = 'word-kingdom-v2';
 const ASSETS = [
   './',
   './index.html',
   './index.tsx',
+  './App.tsx',
+  './constants.tsx',
+  './types.ts',
   './manifest.json',
   'https://cdn.tailwindcss.com',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'
+  'https://unpkg.com/@babel/standalone/babel.min.js'
 ];
 
 self.addEventListener('install', (event) => {
