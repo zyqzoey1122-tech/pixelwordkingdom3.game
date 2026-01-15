@@ -1,5 +1,5 @@
 
-import { Word } from './types';
+import { Word } from './types.ts';
 
 export const WORLDS = [
   { id: 1, name: "Ancient Valley (Unit 1)", theme: "emerald" },
@@ -11,7 +11,7 @@ export const WORLDS = [
   { id: 7, name: "Gourmet Island (Unit 7)", theme: "rose" },
   { id: 8, name: "Wisdom Temple (Unit 8)", theme: "orange" }
 ];
-
+// ... 单词数据保持不变 ...
 const u1: Word[] = [
   { id: 'u1-1', english: 'ancient', chinese: '古代的', pos: 'adj', example: 'This is an ancient building.', exampleChinese: '这是一座古老的建筑。' },
   { id: 'u1-2', english: 'camp', chinese: '营地', pos: 'n', example: 'We stay at the camp.', exampleChinese: '我们呆在营地里。' },
@@ -46,7 +46,7 @@ const u1: Word[] = [
   { id: 'u1-31', english: 'simply', chinese: '简单地', pos: 'adv', example: 'Just do it simply.', exampleChinese: '就简单地做吧。' },
   { id: 'u1-32', english: 'suddenly', chinese: '突然', pos: 'adv', example: 'Suddenly it rained.', exampleChinese: '突然，天开始下雨了。' }
 ];
-
+// ... 后续 Unit 保持不变 ...
 const u2: Word[] = [
   { id: 'u2-1', english: 'pack', chinese: '打包', pos: 'v', example: 'Pack your bags.', exampleChinese: '打包你的行李。' },
   { id: 'u2-2', english: 'bathroom', chinese: '浴室', pos: 'n', example: 'The bathroom is clean.', exampleChinese: '浴室很干净。' },
@@ -81,7 +81,7 @@ const u2: Word[] = [
   { id: 'u2-31', english: 'garden', chinese: '花园', pos: 'n', example: 'Flowers in the garden.', exampleChinese: '花园里的花。' },
   { id: 'u2-32', english: 'backyard', chinese: '后院', pos: 'n', example: 'Play in the backyard.', exampleChinese: '在后院玩。' }
 ];
-
+// ... 后续 Unit 保持不变 ...
 const u3: Word[] = [
   { id: 'u3-1', english: 'student', chinese: '学生', pos: 'n', example: 'He is a good student.', exampleChinese: '他是个好学生。' },
   { id: 'u3-2', english: 'teacher', chinese: '老师', pos: 'n', example: 'My teacher is very kind.', exampleChinese: '我的老师非常和蔼。' },
