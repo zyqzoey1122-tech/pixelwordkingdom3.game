@@ -3,26 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Word Kingdom - SaaS Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@^19.2.3",
-        "react-dom": "https://esm.sh/react-dom@^19.2.3/",
-        "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
-        "@google/genai": "https://esm.sh/@google/genai"
-      }
-    }
-    </script>
+    <title>Kingdom of Words</title>
+    <!-- 引入React（全局版） -->
+    <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <!-- 你的样式（保留原来的排版） -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;500;700&display=swap');
-        body { font-family: 'Quicksand', sans-serif; overflow: hidden; }
-        .bg-sky { background: linear-gradient(to bottom, #bbdefb 0%, #e3f2fd 100%); }
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(to bottom, #bbdefb 0%, #e3f2fd 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pixel-border {
+            border: 4px solid #1a237e;
+            box-shadow: 6px 6px 0 rgba(26, 35, 126, 0.2);
+            border-radius: 20px;
+            background: white;
+            padding: 30px;
+            width: 300px;
+        }
+        .pixel-button {
+            background: #5c6bc0;
+            border-bottom: 8px solid #3949ab;
+            border-radius: 16px;
+            color: white;
+            font-weight: 700;
+            padding: 12px;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+        }
+        .pixel-button:active {
+            border-bottom: 0;
+            transform: translateY(8px);
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #1a237e;
+            border-radius: 8px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #1a237e;
+            text-align: center;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+
+    <script>
+        // 全局React，不用任何翻译工具
+        const { useState } = React;
+
+        function LoginApp() {
+            const [code, setCode] = useState('');
+            const [error, setError] = useState('');
+            const [isLogin, setIsLogin] = useState(false);
+            const RIGHT_CODE = 'kingdom123';
+
+            const checkCode = () => {
+                if (code === RIGHT_CODE) {
+                    setError('');
+                    setIsLogin(true);
+                } else {
+                    setError('专属码错误！');
+                    setCode('');
+                }
+            };
+
+            // ########## 第90行左右的修改：把JSX换成浏览器能懂的React.createElement ##########
+            if (isLogin) {
+                // 原来的 <div className="pixel-border">...</div> 改成下面的写法
+                return React.createElement(
+                    'div',
+                    { className: 'pixel-border' },
+                    React.createElement('h1', null, '登录成功！'),
+                    React.createElement(
+                        'button',
+                        { className: 'pixel-button', onClick: () => setIsLogin(false) },
+                        '退出'
+                    )
+                );
+            }
+
+            // 原来的登录界面JSX，也改成React.createElement
+            return React.createElement(
+                'div',
+                { className: 'pixel-border' },
+                React.createElement('h1', null, 'Kingdom of Words'),
+                React.createElement(
+                    'input',
+                    {
+                        type: 'text',
+                        placeholder: '输入专属码',
+                        value: code,
+                        onChange: (e) => setCode(e.target.value)
+                    }
+                ),
+                React.createElement('p', { className: 'error' }, error),
+                React.createElement(
+                    'button',
+                    { className: 'pixel-button', onClick: checkCode },
+                    '解锁进入'
+                )
+            );
+        }
+
+        // 渲染到页面
+        ReactDOM.createRoot(document.getElementById('root')).render(
+            React.createElement(LoginApp, null)
+        );
+    </script>
 </body>
 </html>
